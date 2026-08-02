@@ -31,6 +31,7 @@ class PlateRecognitionPipeline:
         ocr_model_path: str | None = None,
         easyocr_model_dir: str | None = None,
         device: str | None = None,
+        stretch_ocr: bool = False,
     ) -> None:
         self.detector_path = Path(detector_path)
         self.output_dir = Path(output_dir)
@@ -45,7 +46,9 @@ class PlateRecognitionPipeline:
             self.ocr = ModelOcrBackend(ocr_model_path, torch.device(self.device))
         else:
             self.ocr = EasyOcrBackend(
-                gpu=self.device.startswith("cuda"), model_dir=easyocr_model_dir
+                gpu=self.device.startswith("cuda"),
+                model_dir=easyocr_model_dir,
+                stretch_to_plate_shape=stretch_ocr,
             )
 
     def detect(self, image_path: str | Path) -> tuple[np.ndarray, list[dict[str, Any]]]:

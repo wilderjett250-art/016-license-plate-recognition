@@ -17,9 +17,18 @@ ALLOWED = "京沪津渝冀晋蒙辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川
 class EasyOcrBackend:
     name = "easyocr"
 
-    def __init__(self, gpu: bool = False, model_dir: str | None = None) -> None:
+    def __init__(
+        self,
+        gpu: bool = False,
+        model_dir: str | None = None,
+        stretch_to_plate_shape: bool = False,
+    ) -> None:
         import easyocr
 
+        # The fixed-shape path is experimental. It is opt-in because a small
+        # amount of geometric distortion helps some plates but hurts others.
+        self.stretch_to_plate_shape = stretch_to_plate_shape
+        self.input_size = (256, 64)  # width, height
         kwargs = {"gpu": gpu, "verbose": False}
         if model_dir:
             kwargs["model_storage_directory"] = model_dir
@@ -28,7 +37,12 @@ class EasyOcrBackend:
     def recognize(self, crop_bgr: np.ndarray) -> tuple[str, float]:
         if crop_bgr is None or crop_bgr.size == 0:
             return "", 0.0
-        enlarged = cv2.resize(crop_bgr, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        normalized = (
+            cv2.resize(crop_bgr, self.input_size, interpolation=cv2.INTER_CUBIC)
+            if self.stretch_to_plate_shape
+            else crop_bgr
+        )
+        enlarged = cv2.resize(normalized, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
         results = self.reader.readtext(
             enlarged,
             detail=1,

@@ -23,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--device", default=None, help="cuda:0 或 cpu")
     parser.add_argument(
+        "--stretch-ocr",
+        action="store_true",
+        help="实验模式：先将车牌拉伸为 256×64 矩形再进行 OCR",
+    )
+    parser.add_argument(
         "--plate-index",
         type=int,
         default=None,
@@ -41,6 +46,7 @@ def main() -> None:
         ocr_model_path=root / "models" / "crnn_plate_best_gru.pth",
         easyocr_model_dir=root / "models" / "easyocr",
         device=args.device,
+        stretch_ocr=args.stretch_ocr,
     )
     result = pipeline.process(args.image, plate_index=args.plate_index)
     print(json.dumps(result, ensure_ascii=False, indent=2))

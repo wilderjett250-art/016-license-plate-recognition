@@ -28,6 +28,7 @@
 - 使用 YOLO 车牌检测模型定位中国车牌候选区域。
 - 支持自动选择最高置信度车牌或手动选择候选序号。
 - 只裁切选中的一块车牌，并保存到 `output/crops/`。
+- OCR 默认保留原始车牌比例；可通过 `--stretch-ocr` 开启 `256×64` 固定矩形拉伸实验。
 - 使用 EasyOCR 中文识别后端读取车牌字符。
 - 保留原项目 GRU OCR 权重的兼容调用入口，便于后续对比实验。
 - 根据裁切图像分析蓝色、黄色、绿色、黑色等车牌颜色。
@@ -69,6 +70,14 @@ python main.py samples\111_yello.jpg --plate-index 2
 ```powershell
 python main.py samples\111_yello.jpg --ocr-backend model --device cpu
 ```
+
+启用固定矩形拉伸实验：
+
+```powershell
+python main.py samples\111_yello.jpg --stretch-ocr
+```
+
+固定拉伸对不同车牌图像的影响可能不同，因此默认关闭，建议在自己的测试集上对比后再决定是否作为默认预处理。
 
 结果示例：
 
