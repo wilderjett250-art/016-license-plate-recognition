@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
     QLabel,
+    QInputDialog,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -24,14 +25,14 @@ from pipeline import PlateRecognitionPipeline
 class PlateWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("统一车牌识别与信息分析")
+        self.setWindowTitle("中国车牌单牌识别与信息分析")
         self.resize(1080, 760)
         self.image_label = QLabel("选择一张车辆图片开始识别")
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setMinimumHeight(430)
         self.result_box = QTextEdit()
         self.result_box.setReadOnly(True)
-        self.open_button = QPushButton("选择图片并识别")
+        self.open_button = QPushButton("选择图片并识别一块车牌")
         self.open_button.clicked.connect(self.open_image)
         layout = QVBoxLayout()
         layout.addWidget(self.open_button)
@@ -48,6 +49,28 @@ class PlateWindow(QMainWindow):
             easyocr_model_dir=root / "models" / "easyocr",
         )
 
+    def _choose_plate(self, path: str) -> tuple[int | None, bool]:
+        _, candidates = self.pipeline.detect(path)
+        if not candidates:
+            return None, False
+        if len(candidates) == 1:
+            return 1, False
+        options = [
+            f"车牌 {candidate['rank']}（检测置信度 {candidate['confidence']:.4f}）"
+            for candidate in candidates
+        ]
+        choice, accepted = QInputDialog.getItem(
+            self,
+            "选择车牌区域",
+            "检测到多块候选车牌，请选择要进行 OCR 和分析的一块：",
+            options,
+            0,
+            False,
+        )
+        if not accepted:
+            return None, True
+        return options.index(choice) + 1, False
+
     def open_image(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self, "选择车辆图片", "", "Images (*.jpg *.jpeg *.png *.bmp)"
@@ -55,7 +78,10 @@ class PlateWindow(QMainWindow):
         if not path:
             return
         try:
-            result = self.pipeline.process(path)
+            selected_index, canceled = self._choose_plate(path)
+            if canceled:
+                return
+            result = self.pipeline.process(path, plate_index=selected_index)
             self.image_label.setPixmap(
                 QPixmap(result["annotated_image"]).scaled(
                     self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation

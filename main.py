@@ -8,7 +8,9 @@ from pipeline import PlateRecognitionPipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="统一车牌定位、文字识别与信息分析程序")
+    parser = argparse.ArgumentParser(
+        description="中国车牌定位、单牌 OCR 与信息分析程序"
+    )
     parser.add_argument("image", help="待识别图片路径")
     parser.add_argument(
         "--output-dir", default="output", help="结果目录，默认 output"
@@ -17,9 +19,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--ocr-backend",
         choices=["easyocr", "model"],
         default="easyocr",
-        help="文字识别后端；默认使用 EasyOCR 中文模型",
+        help="文字识别后端，默认使用 EasyOCR 中文模型",
     )
     parser.add_argument("--device", default=None, help="cuda:0 或 cpu")
+    parser.add_argument(
+        "--plate-index",
+        type=int,
+        default=None,
+        help="选择第几块候选车牌（按检测置信度排序，从 1 开始；默认选择最高置信度）",
+    )
     return parser
 
 
@@ -34,7 +42,7 @@ def main() -> None:
         easyocr_model_dir=root / "models" / "easyocr",
         device=args.device,
     )
-    result = pipeline.process(args.image)
+    result = pipeline.process(args.image, plate_index=args.plate_index)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
