@@ -30,6 +30,7 @@
 - 只裁切选中的一块车牌，并保存到 `output/crops/`。
 - OCR 默认保留原始车牌比例；可通过 `--stretch-ocr` 开启 `256×64` 固定矩形拉伸实验。
 - 使用 EasyOCR 中文识别后端读取车牌字符。
+- 集成 HyperLPR3 的 ONNX 识别模型作为可选 OCR 后端；仍然只读取 YOLO 选中的单块车牌裁切图。
 - 保留原项目 GRU OCR 权重的兼容调用入口，便于后续对比实验。
 - 根据裁切图像分析蓝色、黄色、绿色、黑色等车牌颜色。
 - 根据首字符解析省份或地区，例如“浙”对应浙江、“粤”对应广东。
@@ -71,6 +72,14 @@ python main.py samples\111_yello.jpg --plate-index 2
 python main.py samples\111_yello.jpg --ocr-backend model --device cpu
 ```
 
+使用 HyperLPR3 识别后端：
+
+```powershell
+python main.py samples\111_yello.jpg --ocr-backend hyperlpr3 --device cpu
+```
+
+HyperLPR3 后端只负责已经裁切好的车牌文字识别，不替换当前 YOLO 检测器，也不把整张车辆图片直接交给 OCR。识别模型文件位于 `models/hyperlpr3/rpv3_mdict_160_r3.onnx`，通过 Git LFS 管理；安装依赖时只需安装 `requirements.txt` 中的 `onnxruntime`。
+
 启用固定矩形拉伸实验：
 
 ```powershell
@@ -104,7 +113,7 @@ main.py                 命令行入口与车牌序号参数
 gui.py                  PyQt5 图形界面与单牌选择框
 pipeline.py             检测、排序、单牌裁切、OCR、分析和输出编排
 plate_analysis.py       颜色、地区、车牌类型分析
-ocr_backend.py          EasyOCR 与原项目模型识别后端
+ocr_backend.py          EasyOCR、HyperLPR3 与原项目模型识别后端
 plate_model.py          与原提交包权重匹配的 GRU 模型结构
 models/                 YOLO 与 OCR 模型权重（Git LFS）
 training/               后续训练脚本与实验材料
@@ -114,7 +123,7 @@ samples/                交付包中的测试图片
 
 ## 模型关系与兼容说明
 
-当前运行链路使用 YOLO 检测模型加 EasyOCR 中文识别后端。`--ocr-backend model` 提供原项目 GRU 权重的兼容验证入口，权重结构由 `plate_model.py` 单独维护。
+当前默认运行链路使用 YOLO 检测模型加 EasyOCR 中文识别后端。`--ocr-backend hyperlpr3` 可以切换到 HyperLPR3 的单牌 ONNX 识别模型；`--ocr-backend model` 提供原项目 GRU 权重的兼容验证入口，权重结构由 `plate_model.py` 单独维护。
 
 训练目录中的后续实验脚本保留为研究材料。运行版模型和训练实验分开管理，便于复现当前结果并继续迭代模型，而不会把不同结构的权重混在同一条推理链路中。
 
@@ -136,4 +145,4 @@ This project recognizes Chinese license plates from vehicle images. YOLO detects
 
 ## Copyright and data use
 
-The detector and OCR weights come from the original course project and subsequent local experiments. Please follow the licenses of PyTorch, Ultralytics, EasyOCR and any other dependency used by your deployment. Do not commit real vehicle images, personal information or production credentials to a public repository.
+The detector and OCR weights come from the original course project, subsequent local experiments, and the optional HyperLPR3 Apache-2.0 model integration. Please follow the licenses of PyTorch, Ultralytics, EasyOCR, HyperLPR3 and any other dependency used by your deployment. Do not commit real vehicle images, personal information or production credentials to a public repository.

@@ -18,7 +18,7 @@ import torch
 from PIL import Image, ImageDraw, ImageFont
 from ultralytics import YOLO
 
-from ocr_backend import EasyOcrBackend, ModelOcrBackend
+from ocr_backend import EasyOcrBackend, HyperLpr3Backend, ModelOcrBackend
 from plate_analysis import analyze_plate
 
 
@@ -29,6 +29,7 @@ class PlateRecognitionPipeline:
         output_dir: str,
         ocr_backend: str = "easyocr",
         ocr_model_path: str | None = None,
+        hyperlpr_model_path: str | None = None,
         easyocr_model_dir: str | None = None,
         device: str | None = None,
         stretch_ocr: bool = False,
@@ -44,6 +45,10 @@ class PlateRecognitionPipeline:
             if not ocr_model_path:
                 raise ValueError("ocr_backend=model 时必须提供 ocr_model_path")
             self.ocr = ModelOcrBackend(ocr_model_path, torch.device(self.device))
+        elif ocr_backend == "hyperlpr3":
+            if not hyperlpr_model_path:
+                raise ValueError("ocr_backend=hyperlpr3 时必须提供 hyperlpr_model_path")
+            self.ocr = HyperLpr3Backend(hyperlpr_model_path, device=self.device)
         else:
             self.ocr = EasyOcrBackend(
                 gpu=self.device.startswith("cuda"),

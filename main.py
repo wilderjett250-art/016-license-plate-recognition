@@ -17,9 +17,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--ocr-backend",
-        choices=["easyocr", "model"],
+        choices=["easyocr", "hyperlpr3", "model"],
         default="easyocr",
-        help="文字识别后端，默认使用 EasyOCR 中文模型",
+        help="文字识别后端：easyocr、hyperlpr3 或原项目 model",
     )
     parser.add_argument("--device", default=None, help="cuda:0 或 cpu")
     parser.add_argument(
@@ -44,6 +44,7 @@ def main() -> None:
         output_dir=args.output_dir,
         ocr_backend=args.ocr_backend,
         ocr_model_path=root / "models" / "crnn_plate_best_gru.pth",
+        hyperlpr_model_path=root / "models" / "hyperlpr3" / "rpv3_mdict_160_r3.onnx",
         easyocr_model_dir=root / "models" / "easyocr",
         device=args.device,
         stretch_ocr=args.stretch_ocr,
