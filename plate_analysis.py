@@ -43,10 +43,32 @@ PROVINCES: Dict[str, str] = {
     "新": "新疆",
 }
 
+# The first character of a mainland Chinese vehicle plate is a provincial
+# abbreviation. Keep this whitelist separate so OCR candidates from a general
+# Chinese dictionary can be rejected before they affect region analysis.
+PROVINCE_PREFIXES = frozenset(PROVINCES)
+PLATE_SUFFIX_CHARACTERS = frozenset("ABCDEFGHJKLMNPQRSTUVWXYZ0123456789")
+
 
 def normalize_plate_text(text: str) -> str:
-    text = re.sub(r"[^京沪津渝冀晋蒙辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云藏陕甘青宁新A-Z0-9]", "", text.upper())
-    return text[:8]
+    cleaned = re.sub(r"[^京沪津渝冀晋蒙辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云藏陕甘青宁新A-Z0-9]", "", text.upper())
+    if not cleaned or cleaned[0] not in PROVINCE_PREFIXES:
+        return ""
+    suffix = "".join(char for char in cleaned[1:] if char in PLATE_SUFFIX_CHARACTERS)
+    return (cleaned[0] + suffix)[:8]
+
+
+def extract_province_prefix(text: str) -> str:
+    """Return one valid province abbreviation or an empty string.
+
+    This is intentionally stricter than general Chinese OCR: a candidate such
+    as ``由`` or ``福`` is rejected instead of being passed to region lookup.
+    """
+
+    for char in text.upper():
+        if char in PROVINCE_PREFIXES:
+            return char
+    return ""
 
 
 def classify_color(crop_bgr: np.ndarray) -> tuple[str, float]:
